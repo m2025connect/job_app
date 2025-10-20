@@ -1,0 +1,9 @@
+@app.route('/delete_invite/<int:id>', methods=['POST'])
+@login_required
+def delete_invite(id):
+    inv = Invite.query.get_or_404(id)
+    db.session.delete(inv)
+    db.session.commit()
+    flash('発行済みURLを削除しました')
+    return redirect(url_for('dashboard'))
+

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>企業設定</title>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <a href="{{ url_for('dashboard') }}" class="inline-block mb-4 text-slate-600">← ダッシュボードへ</a>
+  <div class="max-w-2xl bg-white rounded-2xl shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">企業設定</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-4">
+          {% for category, message in messages %}
+            <div class="p-3 rounded border {{ 'border-red-300 bg-red-50 text-red-700' if category=='danger' else 'border-emerald-300 bg-emerald-50 text-emerald-700' }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">低リスク最大％</label>
+          <input name="risk_low_max" type="number" class="w-full border rounded-lg p-2"
+                 value="{{ (settings.risk_low_max if settings else 40) }}" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">中リスク最大％</label>
+          <input name="risk_med_max" type="number" class="w-full border rounded-lg p-2"
+                 value="{{ (settings.risk_med_max if settings else 70) }}" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">通知メール（表示用）</label>
+        <input name="admin_email" type="email" class="w-full border rounded-lg p-2"
+               value="{{ (settings.admin_email if settings else (company.email if company else '')) }}" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">新しいパスワード（任意）</label>
+        <input name="new_password" type="password" class="w-full border rounded-lg p-2" />
+      </div>
+      <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg">保存</button>
+    </form>
+  </div>
+</body>
+</html>
+

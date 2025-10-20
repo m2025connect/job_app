@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>スキル管理</title>
+</head>
+<body>
+    <h2>スキル管理</h2>
+    <form method="POST">
+        <input type="text" name="skill_name" placeholder="スキル名" required>
+        <button type="submit">追加</button>
+    </form>
+    <h3>登録済みスキル</h3>
+    <ul>
+        {% for s in skills %}
+            <li>{{ s[1] }}</li>
+        {% endfor %}
+    </ul>
+    <p><a href="/dashboard">ダッシュボードへ戻る</a></p>
+</body>
+</html>
+

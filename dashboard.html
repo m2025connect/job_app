@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+<header class="flex items-center justify-between mb-6">
+<h1 class="text-2xl font-bold">ダッシュボード</h1>
+<nav class="flex flex-wrap gap-2">
+<!-- ★ 受験URL（旧 invites → add_applicant に差し替え） -->
+<a href="{{ url_for('add_applicant') }}" class="px-3 py-2 bg-indigo-600 text-white rounded-lg">受験URL</a>
+
+<a href="{{ url_for('add_applicant') }}" class="px-3 py-2 bg-sky-600 text-white rounded-lg">受験者追加</a>
+<a href="{{ url_for('manage_questions') }}" class="px-3 py-2 bg-slate-700 text-white rounded-lg">問題カスタム</a>
+<a href="{{ url_for('settings') }}" class="px-3 py-2 bg-emerald-600 text-white rounded-lg">企業設定</a>
+<a href="{{ url_for('logout') }}" class="px-3 py-2 bg-gray-300 rounded-lg">ログアウト</a>
+</nav>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for category, message in messages %}
+<div class="p-3 rounded border {{ 'border-red-300 bg-red-50 text-red-700' if category=='danger' else 'border-emerald-300 bg-emerald-50 text-emerald-700' }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+{% if settings %}
+<div class="mb-4 text-sm text-slate-700">
+<span class="font-semibold">リスク判定:</span>
+低 ≤ {{ settings.risk_low_max }} ／ 中 ≤ {{ settings.risk_med_max }} ／ それ以上は高
+</div>
+{% endif %}
+
+<div class="bg-white rounded-2xl shadow overflow-x-auto">
+<table class="min-w-full text-sm">
+<thead class="bg-slate-100">
+<tr>
+<th class="text-left p-3">氏名</th>
+<th class="text-left p-3">メール</th>
+<th class="text-right p-3">総合スコア</th>
+<th class="text-right p-3">離職リスク％</th>
+<th class="text-left p-3">ラベル</th>
+<th class="text-center p-3">詳細</th>
+</tr>
+</thead>
+<tbody>
+{% for a in applicants %}
+<tr class="border-t">
+<td class="p-3">{{ a.applicant_name or '-' }}</td>
+<td class="p-3">{{ a.email or '-' }}</td>
+<td class="p-3 text-right">{{ '%.1f'|format(a.score or 0) }}</td>
+<td class="p-3 text-right">{{ a.risk_percent or 0 }}%</td>
+<td class="p-3">{{ a.risk_label or '-' }}</td>
+<td class="p-3 text-center">
+<a class="text-indigo-600 underline" href="{{ url_for('applicant_detail', applicant_id=a.id) }}">見る</a>
+</td>
+</tr>
+{% else %}
+<tr><td class="p-4 text-center text-slate-500" colspan="6">まだ応募者がいません</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</body>
+</html>

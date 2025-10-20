@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>質問追加</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+<div class="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
+  <h1 class="text-xl font-bold mb-4">質問追加</h1>
+
+  <form method="POST">
+    <!-- 質問タイプ選択 -->
+    <label class="block mb-2">質問タイプ</label>
+    <select id="qtype" name="type" class="w-full border p-2 mb-4 rounded">
+      <option value="text">テキスト</option>
+      <option value="multiple">4択</option>
+    </select>
+
+    <!-- 質問文 -->
+    <label class="block mb-2">質問文</label>
+    <input type="text" name="question" class="w-full border p-2 mb-4 rounded" required>
+
+    <!-- テキスト質問フォーム -->
+    <div id="text-fields">
+      <label class="block mb-2">模範解答</label>
+      <input type="text" name="answer" class="w-full border p-2 mb-4 rounded">
+
+      <label class="block mb-2">キーワード（カンマ区切り）</label>
+      <input type="text" name="keywords" class="w-full border p-2 mb-4 rounded">
+    </div>
+
+    <!-- 4択質問フォーム -->
+    <div id="multiple-fields" class="hidden">
+      <label class="block mb-2">選択肢1</label>
+      <input type="text" name="option1" class="w-full border p-2 mb-2 rounded">
+
+      <label class="block mb-2">選択肢2</label>
+      <input type="text" name="option2" class="w-full border p-2 mb-2 rounded">
+
+      <label class="block mb-2">選択肢3</label>
+      <input type="text" name="option3" class="w-full border p-2 mb-2 rounded">
+
+      <label class="block mb-2">選択肢4</label>
+      <input type="text" name="option4" class="w-full border p-2 mb-2 rounded">
+
+      <label class="block mb-2">正解</label>
+      <input type="text" name="correct" class="w-full border p-2 mb-4 rounded">
+    </div>
+
+    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">追加</button>
+    <a href="/questions" class="ml-2 text-gray-600 hover:underline">戻る</a>
+  </form>
+</div>
+
+<!-- JavaScript: 質問タイプ切り替え -->
+<script>
+  const qtypeSelect = document.getElementById("qtype");
+  const textFields = document.getElementById("text-fields");
+  const multipleFields = document.getElementById("multiple-fields");
+
+  qtypeSelect.addEventListener("change", () => {
+    if (qtypeSelect.value === "text") {
+      textFields.classList.remove("hidden");
+      multipleFields.classList.add("hidden");
+    } else {
+      textFields.classList.add("hidden");
+      multipleFields.classList.remove("hidden");
+    }
+  });
+</script>
+
+</body>
+</html>
+

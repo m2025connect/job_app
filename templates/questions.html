@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>質問管理</title>
+</head>
+<body>
+    <h2>質問管理</h2>
+    <form method="POST">
+        <label>質問文</label><br>
+        <input type="text" name="text" required><br>
+        <label>スキルID</label><br>
+        <input type="number" name="skill_id"><br>
+        <label>質問タイプ</label><br>
+        <select name="type">
+            <option value="text">テキスト回答</option>
+            <option value="choice">4択問題</option>
+        </select><br>
+        <label>模範解答（テキスト回答の場合）</label><br>
+        <input type="text" name="model_answer"><br><br>
+        <button type="submit">追加</button>
+    </form>
+    <h3>登録済み質問</h3>
+    <ul>
+        {% for q in questions %}
+            <li>{{ q[1] }} ({{ q[2] }})</li>
+        {% endfor %}
+    </ul>
+    <p><a href="/dashboard">ダッシュボードへ戻る</a></p>
+</body>
+</html>
+

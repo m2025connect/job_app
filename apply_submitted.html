@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdn.tailwindcss.com"></script>
+<title>送信完了</title>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+<div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 text-center">
+<h1 class="text-xl font-bold mb-2">送信ありがとうございました</h1>
+<p class="mb-4">以下は自動採点の結果（参考値）です。</p>
+<div class="grid grid-cols-3 gap-3 mb-6">
+<div class="p-4 rounded-xl bg-slate-50">
+<div class="text-xs text-slate-500">総合スコア</div>
+<div class="text-2xl font-semibold">{{ '%.1f'|format(score or 0) }}</div>
+</div>
+<div class="p-4 rounded-xl bg-slate-50">
+<div class="text-xs text-slate-500">離職リスク</div>
+<div class="text-2xl font-semibold">{{ risk_percent or 0 }}%</div>
+</div>
+<div class="p-4 rounded-xl bg-slate-50">
+<div class="text-xs text-slate-500">ラベル</div>
+<div class="text-2xl font-semibold">{{ risk_label or '-' }}</div>
+</div>
+</div>
+<p class="text-sm text-slate-600">ご回答ありがとうございました。</p>
+</div>
+</body>
+</html>

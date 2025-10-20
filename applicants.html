@@ -1,0 +1,11 @@
+<form method="post">
+  <input name="name" placeholder="名前">
+  <input name="email" placeholder="メール">
+  <button type="submit">登録</button>
+</form>
+<ul>
+{% for a in applicants %}
+  <li>{{ a[1] }} / {{ a[2] }}</li>
+{% endfor %}
+</ul>
+

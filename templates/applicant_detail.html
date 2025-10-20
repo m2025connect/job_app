@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>応募者詳細</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-slate-800">
+<header class="bg-[#1B0086] text-white p-4 flex justify-between items-center shadow">
+  <h1 class="text-xl font-bold">応募者詳細</h1>
+  <div class="space-x-2">
+    <a href="{{ url_for('dashboard') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25">ダッシュボードへ</a>
+    <a href="{{ url_for('logout') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25">ログアウト</a>
+  </div>
+</header>
+
+<main class="p-6 max-w-6xl mx-auto">
+  <!-- 基本情報 -->
+  <div class="bg-white border border-slate-200 p-6 rounded shadow-sm mb-6">
+    <h2 class="text-lg font-bold mb-3 text-[#1B0086]">基本情報</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <p><strong>名前:</strong> {{ applicant.name }}</p>
+      <p><strong>メール:</strong> {{ applicant.email }}</p>
+      <p><strong>総合スコア:</strong> {{ applicant.score is not none and applicant.score or '-' }}</p>
+      <p>
+        <strong>退職リスク:</strong>
+        {% if applicant.risk is not none %}
+          {{ applicant.risk|fmt_pct }}（{{ applicant.risk|risk_grade }}）
+        {% else %}
+          -
+        {% endif %}
+      </p>
+      <p class="md:col-span-2">
+        <strong>受験URL:</strong>
+        <a class="text-[#1B0086] hover:underline" target="_blank"
+           href="{{ url_for('take_exam', token=applicant.exam_token, _external=True) }}">
+          {{ url_for('take_exam', token=applicant.exam_token, _external=True) }}
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- スキル別スコア -->
+  <div class="bg-white border border-slate-200 p-6 rounded shadow-sm mb-6">
+    <h2 class="text-lg font-bold mb-4 text-[#1B0086]">スキルごとのスコア</h2>
+    {% if skill_percentages %}
+      <div class="space-y-3">
+        {% for sname, p in skill_percentages.items() %}
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="font-semibold">{{ sname }}</span>
+              <span class="text-sm">{{ p }} 点</span>
+            </div>
+            <div class="w-full bg-slate-100 border border-slate-200 rounded h-3">
+              <div class="bg-[#1B0086] h-3 rounded" style="width: {{ min(100, max(0, p)) }}%;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-slate-500">まだ採点済みの回答がありません。</div>
+    {% endif %}
+  </div>
+
+  <!-- 受験者の回答（free & mc） -->
+  <div class="bg-white border border-slate-200 p-6 rounded shadow-sm">
+    <h2 class="text-lg font-bold mb-3 text-[#1B0086]">受験者の回答</h2>
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="bg-slate-100">
+          <th class="py-2 px-4 text-left">スキル</th>
+          <th class="py-2 px-4 text-left">問題文</th>
+          <th class="py-2 px-4 text-left">回答</th>
+          <th class="py-2 px-4 text-left">スコア</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for qtext, ans, s, sname, sel_id in responses %}
+          <tr class="border-t align-top">
+            <td class="py-2 px-4">{{ sname or '-' }}</td>
+            <td class="py-2 px-4">{{ qtext }}</td>
+            <td class="py-2 px-4 whitespace-pre-line">
+              {% if sel_id %}
+                {{ sel_text_map.get(sel_id, '-') }}
+              {% else %}
+                {{ ans or '-' }}
+              {% endif %}
+            </td>
+            <td class="py-2 px-4">{{ s is not none and s or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-4 text-slate-500">回答はありません</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>
+

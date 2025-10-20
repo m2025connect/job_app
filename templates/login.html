@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ログイン</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 flex items-center justify-center">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow p-6">
+    <h1 class="text-xl font-semibold mb-4 text-center">管理ログイン</h1>
+    <form method="POST" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1">メールアドレス</label>
+        <input type="email" name="email" class="w-full border rounded p-2" required>
+      </div>
+      <div>
+        <label class="block text-sm mb-1">パスワード</label>
+        <input type="password" name="password" class="w-full border rounded p-2" required>
+      </div>
+      <button class="w-full bg-indigo-600 text-white rounded p-2">ログイン</button>
+    </form>
+  </div>
+</body>
+</html>
+

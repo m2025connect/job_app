@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdn.tailwindcss.com"></script>
+<title>サーバーエラー</title>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+<div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 text-center">
+<h1 class="text-2xl font-bold mb-2">エラーが発生しました</h1>
+<p class="mb-4 text-slate-600">{{ error or '一時的な問題が発生しました。' }}</p>
+<a class="text-indigo-600 underline" href="{{ url_for('dashboard') }}">ダッシュボードへ戻る</a>
+</div>
+</body>
+</html>

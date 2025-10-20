@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>問題カスタム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-slate-800">
+  <!-- Header -->
+  <header class="bg-[#1B0086] text-white p-4 flex justify-between items-center shadow">
+    <h1 class="text-xl font-bold">問題カスタム</h1>
+    <div class="space-x-2">
+      <a href="{{ url_for('dashboard') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25 transition">ダッシュボード</a>
+      <a href="{{ url_for('logout') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25 transition">ログアウト</a>
+    </div>
+  </header>
+
+  <main class="p-6 max-w-6xl mx-auto">
+    <!-- flash messages -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="mb-4 space-y-2">
+          {% for m in messages %}
+            <div class="bg-blue-50 text-blue-900 border border-blue-200 p-2 rounded">{{ m }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- スキル管理 -->
+    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm mb-6">
+      <h2 class="text-lg font-bold mb-2">スキル管理</h2>
+      <form method="POST" action="{{ url_for('add_skill') }}" class="mb-3 flex gap-2">
+        <input type="text" name="name" placeholder="スキル名" class="border p-2 rounded w-60" required>
+        <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110 transition">追加</button>
+      </form>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="bg-slate-100">
+              <th class="py-2 px-4 text-left">スキル名</th>
+              <th class="py-2 px-4 text-left">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in skills %}
+            <tr class="border-t">
+              <td class="py-2 px-4">{{ s.name }}</td>
+              <td class="py-2 px-4">
+                <a href="{{ url_for('delete_skill', id=s.id) }}" class="text-red-600 hover:underline"
+                   onclick="return confirm('このスキルを削除します。よろしいですか？');">削除</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2" class="py-3 text-slate-500 text-center">スキルはありません。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 自由記述 追加 -->
+    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm mb-6">
+      <h2 class="text-lg font-bold mb-2">問題追加（自由記述）</h2>
+      <form method="POST" action="{{ url_for('add_question_free') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">問題文</label>
+          <input type="text" name="text" class="w-full border p-2 rounded" placeholder="例）あなたが最も成長できた経験は？" required>
+        </div>
+
+        <div>
+          <label class="block mb-1 font-semibold">スキル</label>
+          <select name="skill_id" class="w-full border p-2 rounded" required>
+            {% for s in skills %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block mb-1 font-semibold">キーワード（カンマ区切り）</label>
+          <input type="text" name="keywords" class="w-full border p-2 rounded" placeholder="主体性, 継続力, 逆境対応">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">模範解答（任意）</label>
+          <textarea name="model_answer" class="w-full border p-2 rounded h-28" placeholder="模範回答の例（採点基準の参考に）"></textarea>
+        </div>
+
+        <div>
+          <label class="block mb-1 font-semibold">重み：構造（%）</label>
+          <input type="number" name="weight_structure" class="w-full border p-2 rounded" min="0" max="100" step="1" value="40" required>
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">重み：キーワード（%）</label>
+          <input type="number" name="weight_keywords" class="w-full border p-2 rounded" min="0" max="100" step="1" value="30" required>
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">重み：類似度（%）</label>
+          <input type="number" name="weight_similarity" class="w-full border p-2 rounded" min="0" max="100" step="1" value="30" required>
+        </div>
+
+        <div class="md:col-span-2">
+          <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110 transition">追加する</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 選択式 追加 -->
+    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm mb-6">
+      <h2 class="text-lg font-bold mb-2">問題追加（選択式）</h2>
+      <form method="POST" action="{{ url_for('add_question_mc') }}" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">問題文</label>
+          <input type="text" name="text_mc" class="w-full border p-2 rounded" placeholder="例）HTTP 200 は何を表す？" required>
+        </div>
+
+        <div>
+          <label class="block mb-1 font-semibold">スキル</label>
+          <select name="skill_id_mc" class="w-full border p-2 rounded" required>
+            {% for s in skills %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">選択肢（1行1つ、正答は行頭に * を付ける）</label>
+          <textarea name="options_mc" class="w-full border p-2 rounded h-32"
+                    placeholder="*成功を表す
+クライアントエラー
+サーバーエラー
+リダイレクト" required></textarea>
+        </div>
+
+        <div class="md:col-span-2">
+          <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110 transition">追加する</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 既存問題一覧 -->
+    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm">
+      <h2 class="text-lg font-bold mb-2">既存問題</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="bg-slate-100">
+              <th class="py-2 px-4 text-left">タイプ</th>
+              <th class="py-2 px-4 text-left">問題文</th>
+              <th class="py-2 px-4 text-left">スキル</th>
+              <th class="py-2 px-4 text-left">詳細</th>
+              <th class="py-2 px-4 text-left">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for q in questions %}
+            {% set qtype = q.qtype if q.qtype is defined else q.type %}
+            <tr class="border-t align-top">
+              <td class="py-2 px-4">
+                {% if qtype in ['mc','select'] %}選択式{% elif qtype in ['free','text'] %}自由記述{% else %}{{ qtype or '-' }}{% endif %}
+              </td>
+              <td class="py-2 px-4">{{ q.text }}</td>
+              <td class="py-2 px-4">
+                {% set skill = (skills | selectattr('id','equalto', q.skill_id) | list) %}
+                {{ skill[0].name if skill and skill[0] else '-' }}
+              </td>
+              <td class="py-2 px-4">
+                {% if qtype in ['free','text'] %}
+                  重み(構/キ/類): {{ q.weight_structure|default(0)|int }}/{{ q.weight_keywords|default(0)|int }}/{{ q.weight_similarity|default(0)|int }}<br>
+                  キーワード: {{ q.keywords or '-' }}
+                {% else %}
+                  {% set opts = answers_map.get(q.id, []) %}
+                  <div class="space-y-1">
+                    {% for opt in opts %}
+                      <div>
+                        {% if opt.is_correct %}
+                          <span class="px-2 py-0.5 bg-green-600 text-white rounded text-[10px] mr-1">正答</span>
+                        {% endif %}
+                        {{ opt.text }}
+                      </div>
+                    {% endfor %}
+                    {% if not opts %}<div class="text-slate-500">選択肢なし</div>{% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              <td class="py-2 px-4 space-x-3">
+                <a href="{{ url_for('edit_question', id=q.id) }}" class="text-[#1B0086] hover:underline">編集</a>
+                <a href="{{ url_for('delete_question', id=q.id) }}" class="text-red-600 hover:underline"
+                   onclick="return confirm('この問題を削除します。よろしいですか？');">削除</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="py-3 text-slate-500 text-center">問題はありません。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+

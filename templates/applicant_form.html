@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>質問フォーム - {{ applicant.name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+<div class="max-w-3xl mx-auto py-10 px-4">
+
+  <!-- ヘッダー -->
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">質問フォーム - {{ applicant.name }}</h1>
+
+  <form method="POST" class="space-y-6 bg-white p-6 rounded-lg shadow">
+
+    {% for q in questions %}
+      <div class="mb-4">
+        <label class="block font-medium mb-2">{{ loop.index }}. {{ q.question }}</label>
+        {% if q.type == "text" %}
+          <textarea name="q{{ q.id }}" class="w-full border border-gray-300 rounded p-2" rows="4" placeholder="回答を入力"></textarea>
+        {% elif q.type == "multiple" %}
+          {% for option in q.options %}
+            <div class="flex items-center mb-1">
+              <input type="radio" id="q{{ q.id }}_{{ loop.index }}" name="q{{ q.id }}" value="{{ option }}" class="mr-2">
+              <label for="q{{ q.id }}_{{ loop.index }}">{{ option }}</label>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition">送信</button>
+  </form>
+
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>問題編集</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-slate-800">
+<header class="bg-[#1B0086] text-white p-4 flex justify-between items-center shadow">
+  <h1 class="text-xl font-bold">問題編集</h1>
+  <div class="space-x-2">
+    <a href="{{ url_for('manage') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25">問題カスタム</a>
+    <a href="{{ url_for('dashboard') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25">ダッシュボード</a>
+    <a href="{{ url_for('logout') }}" class="bg-white/15 px-3 py-1 rounded hover:bg-white/25">ログアウト</a>
+  </div>
+</header>
+
+<main class="p-6 max-w-4xl mx-auto">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="mb-4 space-y-2">
+        {% for m in messages %}
+          <div class="bg-blue-50 text-blue-900 border border-blue-200 p-2 rounded">{{ m }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- 共通：基本項目の編集 -->
+  <div class="bg-white border border-slate-200 p-6 rounded shadow-sm mb-6">
+    <h2 class="text-lg font-bold mb-2 text-[#1B0086]">基本情報</h2>
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="md:col-span-2">
+        <label class="block mb-1 font-semibold">問題文</label>
+        <input type="text" name="text" class="w-full border p-2 rounded"
+               value="{{ q.text }}" required />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-semibold">スキル</label>
+        <select name="skill_id" class="w-full border p-2 rounded" required>
+          {% for s in skills %}
+            <option value="{{ s.id }}" {% if s.id == q.skill_id %}selected{% endif %}>
+              {{ s.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block mb-1 font-semibold">タイプ</label>
+        <input type="text" class="w-full border p-2 rounded bg-slate-50" value="{{ '選択式 (mc)' if q.qtype=='mc' else '自由記述 (free)' }}" disabled />
+      </div>
+
+      {% if q.qtype == 'free' %}
+        <!-- 自由記述用フィールド -->
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">模範解答（任意）</label>
+          <textarea name="model_answer" class="w-full border p-2 rounded h-28"
+                    placeholder="良い回答の例">{{ q.model_answer or '' }}</textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block mb-1 font-semibold">キーワード（カンマ区切り）</label>
+          <input type="text" name="keywords" class="w-full border p-2 rounded"
+                 value="{{ q.keywords or '' }}" placeholder="leadership, collaboration, python" />
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">重み：構造（%）</label>
+          <input type="number" name="weight_structure" class="w-full border p-2 rounded"
+                 value="{{ q.weight_structure|int }}" min="0" max="100" />
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">重み：キーワード（%）</label>
+          <input type="number" name="weight_keywords" class="w-full border p-2 rounded"
+                 value="{{ q.weight_keywords|int }}" min="0" max="100" />
+        </div>
+        <div>
+          <label class="block mb-1 font-semibold">重み：類似度（%）</label>
+          <input type="number" name="weight_similarity" class="w-full border p-2 rounded"
+                 value="{{ q.weight_similarity|int }}" min="0" max="100" />
+        </div>
+      {% else %}
+        <!-- 選択式の場合は基本フォームだけ送信（選択肢は下で別管理） -->
+      {% endif %}
+
+      <div class="md:col-span-2">
+        <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110">保存</button>
+      </div>
+    </form>
+  </div>
+
+  {% if q.qtype == 'mc' %}
+  <!-- 選択式：選択肢管理 -->
+  <div class="bg-white border border-slate-200 p-6 rounded shadow-sm">
+    <h2 class="text-lg font-bold mb-3 text-[#1B0086]">選択肢の管理</h2>
+
+    <!-- 追加フォーム -->
+    <form method="POST" action="{{ url_for('add_option', qid=q.id) }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+      <div class="md:col-span-4">
+        <label class="block mb-1 font-semibold">選択肢本文</label>
+        <input type="text" name="text" class="w-full border p-2 rounded" placeholder="選択肢を入力" required />
+      </div>
+      <div class="md:col-span-1 flex items-end gap-2">
+        <label class="inline-flex items-center gap-2">
+          <input type="checkbox" name="is_correct" class="accent-[#1B0086]" />
+          <span>正答</span>
+        </label>
+        <button class="ml-auto bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110">追加</button>
+      </div>
+    </form>
+
+    <!-- 一覧 -->
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="bg-slate-100">
+          <th class="py-2 px-4 text-left">正答</th>
+          <th class="py-2 px-4 text-left">本文</th>
+          <th class="py-2 px-4 text-left">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for opt in options %}
+        <tr class="border-t">
+          <td class="py-2 px-4">
+            {% if opt.is_correct %}
+              <span class="px-2 py-0.5 bg-green-600 text-white rounded text-[10px]">正答</span>
+            {% else %}
+              <span class="px-2 py-0.5 bg-slate-200 rounded text-[10px] text-slate-700">—</span>
+            {% endif %}
+          </td>
+          <td class="py-2 px-4">{{ opt.text }}</td>
+          <td class="py-2 px-4">
+            <a href="{{ url_for('delete_option', opt_id=opt.id) }}" class="text-red-600 hover:underline">削除</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="py-3 text-slate-500 text-center">まだ選択肢がありません</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</main>
+</body>
+</html>
+

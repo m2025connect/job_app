@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>企業アカウント管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50">
+  <header class="bg-[#1B0086] text-white">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-lg font-semibold">企業アカウント管理</h1>
+      <nav class="space-x-3 text-sm">
+        <a href="{{ url_for('dashboard') }}" class="underline decoration-white/40 hover:decoration-white">ダッシュボード</a>
+        <a href="{{ url_for('logout') }}" class="underline decoration-white/40 hover:decoration-white">ログアウト</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-4">
+          {% for cat, msg in messages %}
+            <div class="px-4 py-2 rounded {{ 'bg-green-100 text-green-800' if cat=='success' else 'bg-red-100 text-red-800' }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+      <form method="get" class="flex gap-2">
+        <input type="text" name="q" value="{{ q or '' }}" placeholder="会社名で検索" class="border rounded px-3 py-2 w-64">
+        <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:opacity-90">検索</button>
+      </form>
+      <a href="{{ url_for('new_company') }}" class="inline-flex items-center bg-[#1B0086] text-white px-4 py-2 rounded hover:opacity-90">＋ 新規作成</a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-100 text-slate-700">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-semibold">ID</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold">会社名</th>
+            <th class="px-4 py-3 text-left text-sm font-semibold">メモ</th>
+            <th class="px-4 py-3 text-right text-sm font-semibold">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for c in companies %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3 text-sm text-slate-600">{{ c.id }}</td>
+            <td class="px-4 py-3 text-sm font-medium">{{ c.name }}</td>
+            <td class="px-4 py-3 text-sm text-slate-600 whitespace-pre-line">{{ c.memo or '' }}</td>
+            <td class="px-4 py-3">
+              <form method="post" action="{{ url_for('delete_company', company_id=c.id) }}" class="text-right" onsubmit="return confirm('削除しますか？');">
+                <button class="text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-sm">削除</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td class="px-4 py-6 text-center text-slate-500 text-sm" colspan="4">企業アカウントはまだありません。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>
+
