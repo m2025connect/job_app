@@ -1,3 +1,5 @@
+import os
+import uuid, re, secrets, string
 from flask import Flask, render_template, request, redirect, url_for, flash, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
@@ -6,7 +8,6 @@ from flask_login import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func, inspect, text
-import uuid, re, secrets, string
 
 # ================== Flask 基本設定 ==================
 app = Flask(__name__)
@@ -19,25 +20,20 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-
 # ================== モデル ==================
 class User(UserMixin, db.Model):
     id       = db.Column(db.Integer, primary_key=True)
     email    = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    # 将来用: 役割/状態が欲しければ下の2行のコメントを外す
     # role      = db.Column(db.String(20), default='member')
     # is_active = db.Column(db.Boolean, default=True)
-
 
 class Invite(db.Model):
     """管理者が発行する受験用URL（トークン）"""
     id     = db.Column(db.Integer, primary_key=True)
     token  = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     used   = db.Column(db.Boolean, default=False)
-    # ★ 所有者（発行者）
     owner_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-
 
 class Applicant(db.Model):
     """受験提出時に自動作成される応募者"""
@@ -47,16 +43,12 @@ class Applicant(db.Model):
     score      = db.Column(db.Float, nullable=True)   # 総合スコア（回答平均）
     risk       = db.Column(db.Float, nullable=True)   # 0-100（高いほどリスク高）
     exam_token = db.Column(db.String(36), unique=True, nullable=False)  # Invite.token を流用
-    # ★ 所有者（だれの案件か）
     owner_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-
 
 class Skill(db.Model):
     id     = db.Column(db.Integer, primary_key=True)
     name   = db.Column(db.String(100), nullable=False)
-    # ★ 所有者
     owner_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-
 
 class Question(db.Model):
     """問題（自由記述:free / 選択式:mc）"""
@@ -72,9 +64,7 @@ class Question(db.Model):
     weight_keywords  = db.Column(db.Float, default=30.0)      # キーワード一致の重み(%)
     weight_similarity= db.Column(db.Float, default=20.0)      # 模範解答との類似度の重み(%)
 
-    # ★ 所有者
     owner_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-
 
 class Answer(db.Model):
     """選択式の選択肢"""
@@ -82,7 +72,6 @@ class Answer(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
     text        = db.Column(db.Text, nullable=False)
     is_correct  = db.Column(db.Boolean, default=False)
-
 
 class ApplicantResponse(db.Model):
     """応募者の回答（free と mc で共通）"""
@@ -93,44 +82,33 @@ class ApplicantResponse(db.Model):
     selected_answer_id = db.Column(db.Integer, db.ForeignKey('answer.id'), nullable=True)  # mc用
     score              = db.Column(db.Float, nullable=True)   # 0-100
 
-
 # ================== Login 管理 ==================
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-
-# ================== 表示用フィルタ（退職リスク） ==================
+# ================== 表示用フィルタ ==================
 @app.template_filter('risk_grade')
 def risk_grade(risk):
-    """
-    数値(0-100) → S/A/B/C/D に変換。
-    0が低リスク、100が高リスク想定。
-    """
     if risk is None:
         return '-'
     r = float(risk)
-    if r < 10:
-        return 'S'
-    if r < 25:
-        return 'A'
-    if r < 50:
-        return 'B'
-    if r < 75:
-        return 'C'
+    if r < 10:  return 'S'
+    if r < 25:  return 'A'
+    if r < 50:  return 'B'
+    if r < 75:  return 'C'
     return 'D'
 
 @app.template_filter('fmt_pct')
 def fmt_pct(value):
     return '-' if value is None else f"{round(float(value), 1)}%"
 
-
-# ================== 採点ロジック（外部API不要） ==================
+# ================== 採点ロジック ==================
 def _normalize(text: str) -> list[str]:
     t = (text or "").lower()
-    t = re.sub(r'[^a-z0-9ぁ-んァ-ン一-龥\s]', ' ', t)  # 英数と日本語以外の記号を空白に
+    t = re.sub(r'[^a-z0-9ぁ-んァ-ン一-龥\s]', ' ', t)
     toks = [w for w in t.split() if w]
-    return toks  # ←重要
+    return toks
 
 def _jaccard(a: str, b: str) -> float:
     A, B = set(_normalize(a)), set(_normalize(b))
@@ -149,7 +127,6 @@ def _keyword_score(ans: str, keywords_csv: str) -> float:
     return 100.0 * hit / len(kws)
 
 def _grade_sentence_structure_rule_based(text: str) -> float:
-    """Sentence Structure の簡易ルール採点（0-100）"""
     t = (text or "").strip()
     if not t:
         return 0.0
@@ -174,7 +151,6 @@ def _grade_sentence_structure_rule_based(text: str) -> float:
     return max(0.0, min(100.0, round(score, 1)))
 
 def grade_free_answer(ans_text: str, q: 'Question') -> float:
-    """構造 + キーワード + 模範解答類似度 を重み付き合成（合計は自動正規化）"""
     ws = max(0.0, q.weight_structure or 0.0)
     wk = max(0.0, q.weight_keywords  or 0.0)
     wi = max(0.0, q.weight_similarity or 0.0)
@@ -190,20 +166,16 @@ def grade_free_answer(ans_text: str, q: 'Question') -> float:
 def grade_mc(selected_ans: 'Answer') -> float:
     return 100.0 if (selected_ans and selected_ans.is_correct) else 0.0
 
-
-# ================== 共通ユーティリティ（所有者スコープ） ==================
+# ================== 共通ユーティリティ ==================
 def _owner_filter(query, model):
-    """owner_user_id を持つテーブルなら現在ユーザーのデータのみに絞る。"""
     if hasattr(model, "owner_user_id"):
         return query.filter(getattr(model, "owner_user_id") == current_user.id)
     return query
 
 def _ensure_owner(obj):
-    """レコードが自分の所有物であることを確認。違えば 404。"""
     if hasattr(obj, "owner_user_id"):
         if obj.owner_user_id != current_user.id:
             abort(404)
-
 
 # ================== 認証 ==================
 @app.route('/login', methods=['GET', 'POST'])
@@ -225,8 +197,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
-# ================== 画面・操作（全て所有者スコープ） ==================
+# ================== 画面・操作 ==================
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -239,14 +210,12 @@ def dashboard():
 def manage():
     skills    = _owner_filter(db.session.query(Skill), Skill).all()
     questions = _owner_filter(db.session.query(Question), Question).order_by(Question.id.desc()).all()
-    # 選択肢マップ
     answers_map = {}
     for q in questions:
         if q.qtype == 'mc':
             answers_map[q.id] = Answer.query.filter_by(question_id=q.id).all()
     return render_template('manage.html', skills=skills, questions=questions, answers_map=answers_map)
 
-# テストURL発行（招待を1件作成）
 @app.route('/issue_test', methods=['POST'])
 @login_required
 def issue_test():
@@ -256,7 +225,6 @@ def issue_test():
     flash(f'テストURLを発行しました: {url_for("take_exam", token=inv.token, _external=True)}')
     return redirect(url_for('dashboard'))
 
-# 発行済みURLの削除
 @app.route('/delete_invite/<int:id>', methods=['POST'])
 @login_required
 def delete_invite(id):
@@ -267,7 +235,6 @@ def delete_invite(id):
     flash('発行済みURLを削除しました')
     return redirect(url_for('dashboard'))
 
-# スキル追加/削除
 @app.route('/add_skill', methods=['POST'])
 @login_required
 def add_skill():
@@ -290,7 +257,6 @@ def delete_skill(id):
     flash('スキルを削除しました')
     return redirect(url_for('manage'))
 
-# 問題追加（自由記述）
 @app.route('/add_question_free', methods=['POST'])
 @login_required
 def add_question_free():
@@ -316,7 +282,6 @@ def add_question_free():
         flash('問題文とスキルは必須です')
     return redirect(url_for('manage'))
 
-# 問題追加（選択式）
 @app.route('/add_question_mc', methods=['POST'])
 @login_required
 def add_question_mc():
@@ -326,8 +291,7 @@ def add_question_mc():
     if text and skill_id and options_raw:
         q = Question(text=text, skill_id=int(skill_id), qtype='mc', owner_user_id=current_user.id)
         db.session.add(q)
-        db.session.flush()  # q.id を確保
-        # 1行1選択肢、先頭に * を付けると正答
+        db.session.flush()
         for line in options_raw.splitlines():
             opt = line.strip()
             if not opt:
@@ -343,7 +307,6 @@ def add_question_mc():
         flash('問題文・スキル・選択肢は必須です')
     return redirect(url_for('manage'))
 
-# 問題編集（free / mc 共通）
 @app.route('/edit_question/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_question(id):
@@ -365,7 +328,6 @@ def edit_question(id):
     options = Answer.query.filter_by(question_id=q.id).all() if q.qtype == 'mc' else []
     return render_template('edit_question.html', q=q, skills=skills, options=options)
 
-# MC選択肢の追加・削除
 @app.route('/add_option/<int:qid>', methods=['POST'])
 @login_required
 def add_option(qid):
@@ -407,7 +369,6 @@ def delete_question(id):
     flash('問題を削除しました')
     return redirect(url_for('manage'))
 
-# 応募者詳細（所有者のみ）
 @app.route('/applicant/<int:id>')
 @login_required
 def applicant_detail(id):
@@ -443,7 +404,6 @@ def applicant_detail(id):
                            responses=responses,
                            sel_text_map=sel_text_map)
 
-# 受験ページ（トークンのオーナーにひも付く問題のみ）
 @app.route('/exam/<token>', methods=['GET', 'POST'])
 def take_exam(token):
     invite = Invite.query.filter_by(token=token).first_or_404()
@@ -468,7 +428,7 @@ def take_exam(token):
             db.session.add(applicant)
             invite.used = True
 
-        db.session.flush()  # applicant.id を確保
+        db.session.flush()
         for q in questions:
             if q.qtype == 'free':
                 ans = (request.form.get(f'answer_free_{q.id}') or '').strip()
@@ -492,7 +452,6 @@ def take_exam(token):
                     score=s
                 ))
 
-        # 総合スコア/リスク
         db.session.flush()
         resps = ApplicantResponse.query.filter_by(applicant_id=applicant.id).all()
         if resps:
@@ -506,19 +465,14 @@ def take_exam(token):
     return render_template('exam.html', invite=invite, applicant=applicant,
                            questions=questions, options_map=options_map)
 
-
-# ========== 管理者向けユーザー管理（簡易: admin@example.com を管理者扱い） ==========
+# ========== 管理者向けユーザー管理 ==========
 def admin_required(view):
     from functools import wraps
     @wraps(view)
     def wrapper(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for('login'))
-        # role カラムが無い前提の簡易判定：メールが admin@example.com なら管理者扱い
         is_admin = (getattr(current_user, 'email', '') == 'admin@example.com')
-        # 将来 role を付けるなら:
-        # role = getattr(current_user, 'role', None)
-        # is_admin = is_admin or role in ('admin', 'owner')
         if not is_admin:
             flash('このページにアクセスする権限がありません', 'error')
             return redirect(url_for('dashboard'))
@@ -559,16 +513,11 @@ def admin_users_new():
         return redirect(url_for('admin_users'))
     return render_template('admin_users_new.html')
 
-
-# ================== 簡易オートマイグレーション（不足カラムの追加） ==================
+# ================== 簡易オートマイグレーション ==================
 def _ensure_new_columns():
-    """
-    既存の database.db に新カラムが無い場合は ALTER TABLE で追加。
-    """
     try:
         insp = inspect(db.engine)
 
-        # 共通: owner_user_id を足す
         def _add_owner_if_missing(table):
             if insp.has_table(table):
                 cols = {c['name'] for c in insp.get_columns(table)}
@@ -585,7 +534,6 @@ def _ensure_new_columns():
             db.session.commit()
             print("[auto-migrate] owner_user_id added to:", touched)
 
-        # Question の採点用カラム
         if insp.has_table('question'):
             qcols = {c['name'] for c in insp.get_columns('question')}
             stmts = []
@@ -607,7 +555,6 @@ def _ensure_new_columns():
                 db.session.commit()
                 print("[auto-migrate] question columns added:", stmts)
 
-        # ApplicantResponse の selected_answer_id
         if insp.has_table('applicant_response'):
             rcols = {c['name'] for c in insp.get_columns('applicant_response')}
             if 'selected_answer_id' not in rcols:
@@ -618,18 +565,20 @@ def _ensure_new_columns():
     except Exception as e:
         print("[auto-migrate] skipped or failed:", e)
 
-
-# ================== 起動ブロック ==================
+# ================== 起動ブロック（Render対応） ==================
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         _ensure_new_columns()
-
-        # 初期管理ユーザー（無ければ）
         if not User.query.filter_by(email="admin@example.com").first():
             hashed = generate_password_hash("password123")
-            db.session.add(User(email="admin@example.com", password=hashed))
-            db.session.commit()
+            db.session.add(User(email="admin@example.com"),)
+            # 修正：正しいカラムにハッシュを設定
+            db.session.rollback()
+            admin_user = User(email="admin@example.com", password=hashed)
+            db.session.add(admin_user)
+        db.session.commit()
 
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
 
