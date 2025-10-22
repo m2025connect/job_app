@@ -570,15 +570,15 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         _ensure_new_columns()
+
+        # 管理者ユーザーがなければ作成
         if not User.query.filter_by(email="admin@example.com").first():
             hashed = generate_password_hash("password123")
-            db.session.add(User(email="admin@example.com"),)
-            # 修正：正しいカラムにハッシュを設定
-            db.session.rollback()
             admin_user = User(email="admin@example.com", password=hashed)
             db.session.add(admin_user)
-        db.session.commit()
+            db.session.commit()
 
+    # Renderの環境ポートに合わせて起動
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
 
