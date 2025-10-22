@@ -1,147 +1,65 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>ダッシュボード</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-white text-slate-800">
-  <!-- Header -->
-  <header class="bg-[#1B0086] text-white p-4 flex justify-between items-center shadow">
-    <h1 class="text-xl font-bold">ダッシュボード</h1>
-    <div class="space-x-2">
-      <a href="{{ url_for('manage') }}"
-         class="bg-white/15 px-3 py-1 rounded hover:bg-white/25 transition">管理</a>
-      <a href="{{ url_for('logout') }}"
-         class="bg-white/15 px-3 py-1 rounded hover:bg-white/25 transition">ログアウト</a>
-    </div>
-  </header>
+<body class="bg-gray-50 min-h-screen p-6">
+<header class="flex items-center justify-between mb-6">
+<h1 class="text-2xl font-bold">ダッシュボード</h1>
+<nav class="flex flex-wrap gap-2">
+<!-- ★ 受験URL（旧 invites → add_applicant に差し替え） -->
+<a href="{{ url_for('add_applicant') }}" class="px-3 py-2 bg-indigo-600 text-white rounded-lg">受験URL</a>
 
-  <main class="p-6 max-w-6xl mx-auto">
-    <!-- flash messages -->
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="mb-4 space-y-2">
-          {% for m in messages %}
-            <div class="bg-blue-50 text-blue-900 border border-blue-200 p-2 rounded">
-              {{ m }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+<a href="{{ url_for('add_applicant') }}" class="px-3 py-2 bg-sky-600 text-white rounded-lg">受験者追加</a>
+<a href="{{ url_for('manage_questions') }}" class="px-3 py-2 bg-slate-700 text-white rounded-lg">問題カスタム</a>
+<a href="{{ url_for('settings') }}" class="px-3 py-2 bg-emerald-600 text-white rounded-lg">企業設定</a>
+<a href="{{ url_for('logout') }}" class="px-3 py-2 bg-gray-300 rounded-lg">ログアウト</a>
+</nav>
+</header>
 
-    <!-- テストURL発行 -->
-    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm mb-6">
-      <h2 class="text-lg font-bold mb-2">テストURL発行</h2>
-      <form method="POST" action="{{ url_for('issue_test') }}">
-        <button class="bg-[#1B0086] text-white px-4 py-2 rounded hover:brightness-110 transition">
-          テストURLを発行
-        </button>
-      </form>
-    </div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for category, message in messages %}
+<div class="p-3 rounded border {{ 'border-red-300 bg-red-50 text-red-700' if category=='danger' else 'border-emerald-300 bg-emerald-50 text-emerald-700' }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
 
-    <!-- 発行済みURL一覧 -->
-    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm mb-6 overflow-x-auto">
-      <h2 class="text-lg font-bold mb-2">発行済みテストURL</h2>
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="bg-slate-100">
-            <th class="py-2 px-4 text-left">URL</th>
-            <th class="py-2 px-4 text-left">使用済み</th>
-            <th class="py-2 px-4 text-left">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for inv in invites %}
-          <tr class="border-t">
-            <td class="py-2 px-4">
-              <a class="text-[#1B0086] hover:underline" target="_blank"
-                 href="{{ url_for('take_exam', token=inv.token, _external=True) }}">
-                {{ url_for('take_exam', token=inv.token, _external=True) }}
-              </a>
-            </td>
-            <td class="py-2 px-4">{{ 'はい' if inv.used else 'いいえ' }}</td>
-            <td class="py-2 px-4">
-              <form method="POST"
-                    action="{{ url_for('delete_invite', id=inv.id) }}"
-                    onsubmit="return confirm('このURLを削除します。よろしいですか？');">
-                <button class="bg-red-600 text-white px-3 py-1 rounded hover:brightness-110 transition">
-                  削除
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="3" class="py-3 text-slate-500 text-center">まだ発行されていません。</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+{% if settings %}
+<div class="mb-4 text-sm text-slate-700">
+<span class="font-semibold">リスク判定:</span>
+低 ≤ {{ settings.risk_low_max }} ／ 中 ≤ {{ settings.risk_med_max }} ／ それ以上は高
+</div>
+{% endif %}
 
-    <!-- 応募者一覧 -->
-    <div class="bg-white border border-slate-200 p-4 rounded shadow-sm overflow-x-auto">
-      <h2 class="text-lg font-bold mb-2">応募者一覧</h2>
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="bg-slate-100">
-            <th class="py-2 px-4 text-left">氏名</th>
-            <th class="py-2 px-4 text-left">メール</th>
-            <th class="py-2 px-4 text-left">受験URL</th>
-            <th class="py-2 px-4 text-left">総合スコア</th>
-            <th class="py-2 px-4 text-left">リスク</th>
-            <th class="py-2 px-4 text-left">詳細</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for a in applicants %}
-          <tr class="border-t">
-            <!-- a.name / a.applicant_name の差異に対応 -->
-            <td class="py-2 px-4">{{ a.name or a.applicant_name }}</td>
-            <td class="py-2 px-4">{{ a.email }}</td>
-            <td class="py-2 px-4">
-              {% if a.exam_token %}
-                <a class="text-[#1B0086] hover:underline" target="_blank"
-                   href="{{ url_for('take_exam', token=a.exam_token, _external=True) }}">
-                  URL
-                </a>
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td class="py-2 px-4">
-              {{ a.score if a.score is not none else '-' }}
-            </td>
-            <td class="py-2 px-4">
-              {# 3パターンを許容：a.risk（数値）/ a.risk_label + a.risk_percent / 不明 #}
-              {% if a.risk is not none %}
-                {{ a.risk }}  {# 独自フィルタが無い前提でそのまま表示 #}
-              {% elif a.risk_label is defined or a.risk_percent is defined %}
-                <span class="font-semibold">
-                  {{ a.risk_label if a.risk_label is defined else '' }}
-                </span>
-                {% if a.risk_percent is defined %}（{{ '%.1f'|format(a.risk_percent) }}%）{% endif %}
-              {% else %}
-                -
-              {% endif %}
-            </td>
-            <td class="py-2 px-4">
-              <a class="text-[#1B0086] hover:underline"
-                 href="{{ url_for('applicant_detail', id=a.id) }}">詳細</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6" class="py-3 text-slate-500 text-center">応募者はいません</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </main>
+<div class="bg-white rounded-2xl shadow overflow-x-auto">
+<table class="min-w-full text-sm">
+<thead class="bg-slate-100">
+<tr>
+<th class="text-left p-3">氏名</th>
+<th class="text-left p-3">メール</th>
+<th class="text-right p-3">総合スコア</th>
+<th class="text-right p-3">離職リスク％</th>
+<th class="text-left p-3">ラベル</th>
+<th class="text-center p-3">詳細</th>
+</tr>
+</thead>
+<tbody>
+{% for a in applicants %}
+<tr class="border-t">
+<td class="p-3">{{ a.applicant_name or '-' }}</td>
+<td class="p-3">{{ a.email or '-' }}</td>
+<td class="p-3 text-right">{{ '%.1f'|format(a.score or 0) }}</td>
+<td class="p-3 text-right">{{ a.risk_percent or 0 }}%</td>
+<td class="p-3">{{ a.risk_label or '-' }}</td>
+<td class="p-3 text-center">
+<a class="text-indigo-600 underline" href="{{ url_for('applicant_detail', applicant_id=a.id) }}">見る</a>
+</td>
+</tr>
+{% else %}
+<tr><td class="p-4 text-center text-slate-500" colspan="6">まだ応募者がいません</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
 </body>
 </html>
-

@@ -1,26 +1,36 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ログイン</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script src="https://cdn.tailwindcss.com"></script>
+<title>ログイン</title>
 </head>
-<body class="min-h-screen bg-slate-50 flex items-center justify-center">
-  <div class="w-full max-w-md bg-white rounded-2xl shadow p-6">
-    <h1 class="text-xl font-semibold mb-4 text-center">管理ログイン</h1>
-    <form method="POST" class="space-y-4">
-      <div>
-        <label class="block text-sm mb-1">メールアドレス</label>
-        <input type="email" name="email" class="w-full border rounded p-2" required>
-      </div>
-      <div>
-        <label class="block text-sm mb-1">パスワード</label>
-        <input type="password" name="password" class="w-full border rounded p-2" required>
-      </div>
-      <button class="w-full bg-indigo-600 text-white rounded p-2">ログイン</button>
-    </form>
-  </div>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+<div class="w-full max-w-md bg-white rounded-2xl shadow p-6">
+<h1 class="text-2xl font-bold mb-4">企業ログイン</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="space-y-2 mb-4">
+{% for category, message in messages %}
+<div class="p-3 rounded border {{ 'border-red-300 bg-red-50 text-red-700' if category=='danger' else 'border-emerald-300 bg-emerald-50 text-emerald-700' }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<form method="POST" class="space-y-4">
+<div>
+<label class="block text-sm mb-1">メール</label>
+<input type="email" name="email" required class="w-full border rounded-lg p-2" />
+</div>
+<div>
+<label class="block text-sm mb-1">パスワード</label>
+<input type="password" name="password" required class="w-full border rounded-lg p-2" />
+</div>
+<button class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">ログイン</button>
+</form>
+</div>
 </body>
 </html>
-

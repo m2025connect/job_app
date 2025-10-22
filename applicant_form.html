@@ -1,8 +1,0 @@
-<form method="post">
-{% for q in questions %}
-  <label>{{ q[1] }}</label>
-  <input name="q{{ q[0] }}">
-{% endfor %}
-<button type="submit">送信</button>
-</form>
-
